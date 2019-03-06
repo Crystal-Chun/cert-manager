@@ -76,6 +76,14 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			}
 		}*/
 		ka := x509crt[0].PublicKeyAlgorithm.String()
+		if ka == "rsa" {
+			ka = v1alpha1.RSAKeyAlgorithm
+		} else if ka == "ecdsa" {
+			ka = v1alpha1.ECDSAKeyAlgorithm
+		} else {
+			klog.Infof("Invalid key algorithm %s", ka)
+			return nil
+		}
 		cn := x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		dur := x509crt[0].NotAfter.Sub(time.Now())
@@ -86,12 +94,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			},
 			Spec: v1alpha1.CertificateSpec {
 				CommonName: cn,
-				DnsNames: make([]string),
+				DNSNames: make([]string),
 				IsCA: ca,
 				SecretName: secret.ObjectMeta.Name,
 				IssuerRef: v1alpha1.ObjectReference {
-					kind: "ClusterIssuer",
-					name: "icp-ca-issuer",
+					Kind: "ClusterIssuer",
+					Name: "icp-ca-issuer",
 				},
 				KeyAlgorithm: ka,
 				Duration: dur,
