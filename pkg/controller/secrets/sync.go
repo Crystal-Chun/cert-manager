@@ -19,7 +19,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 	if crt == nil {
 		klog.Info("Associated cert manager cert does not exist with this secret")
 		// Decode the certificate in the secret
-		x509crt, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, "cert")
+		x509crt, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, "tls.crt")
 		if error != nil {
 			klog.Infof("Error occurred: %v", error)
 			return nil
