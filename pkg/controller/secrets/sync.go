@@ -88,7 +88,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		cn := x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		dur := x509crt[0].NotAfter.Sub(time.Now())
-		dur = &metav1.Duration {
+		newDur = &metav1.Duration {
 			Duration: dur,
 		}
 		crt = &v1alpha1.Certificate {
@@ -106,7 +106,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 					Name: "icp-ca-issuer",
 				},
 				KeyAlgorithm: kalgo,
-				Duration: dur,
+				Duration: newDur,
 			},
 		}
 		
