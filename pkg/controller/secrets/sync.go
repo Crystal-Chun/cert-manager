@@ -85,16 +85,16 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.CertificateSpec {
-				commonName: cn,
-				dnsNames: make([]string),
-				isCA: ca,
+				CommonName: cn,
+				DnsNames: make([]string),
+				IsCA: ca,
 				SecretName: secret.ObjectMeta.Name,
-				issuerRef: v1alpha1.ObjectReference {
+				IssuerRef: v1alpha1.ObjectReference {
 					kind: "ClusterIssuer",
 					name: "icp-ca-issuer",
 				},
-				keyAlgorithm: ka,
-				duration: dur,
+				KeyAlgorithm: ka,
+				Duration: dur,
 			},
 		}
 		
