@@ -24,7 +24,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Error occurred: %v", error)
 			return nil
 		}
-		klog.Infof("The certificate: %v", x509crt)
+		klog.Infof("The certificate: %v", x509crt[0])
 		// Create the cert manager certificate
 		/*crt = &v1alpha1.Certificate{
 			TypeMeta: metav1.TypeMeta
