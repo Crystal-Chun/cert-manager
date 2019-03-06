@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"k8s.io/apimachinery/pkg/util/runtime"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
@@ -50,7 +52,7 @@ func New(ctx *controllerpkg.Context) *Controller {
 	ctrl.syncedFuncs = append(ctrl.syncedFuncs, certificateInformer.Informer().HasSynced)
 
 	secretInformer := ctrl.KubeSharedInformerFactory.Core().V1().Secrets()
-	secretInformer.Informer().AddEventHandler(&controllerpkg.BlockingEventHandler{WorkFunc: ctrl.handleSecretResource})
+	secretInformer.Informer().AddEventHandler(&controllerpkg.QueuingEventHandler{Queue: ctrl.queue})
 	ctrl.secretLister = secretInformer.Lister()
 	ctrl.syncedFuncs = append(ctrl.syncedFuncs, secretInformer.Informer().HasSynced)
 
@@ -109,7 +111,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context, key string) error 
 		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
 	}
-	secret, err := c.secretLister.Secret(namespace).Get(name)
+	secret, err := c.secretLister.Secrets(namespace).Get(name)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			c.scheduledWorkQueue.Forget(key)

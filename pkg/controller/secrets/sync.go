@@ -14,8 +14,8 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
 	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
 	crtName := secret.Labels[v1alpha1.CertificateNameKey]
-	crt, _ := c.certificateLister().Certificate(namespace).Get(crtName)
-	if crtName == nil || crt == nil {
+	//crt, _ := c.certificateLister.Certificate(namespace).Get(crtName)
+	if crtName == nil {
 		klog.Info("Associated cert manager cert does not exist with this secret")
 		// Decode the certificate in the secret
 		//x509crt := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, )
