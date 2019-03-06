@@ -9,7 +9,7 @@ import (
 	
 )
 
-func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
+func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 	klog.Infof("%v", secret)
 	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
@@ -33,7 +33,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
 
 			}
 		}*/
+		return nil
 	}
+	return nil
 	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	// "github.com/jetstack/cert-manager/pkg/util/kube"
 }
