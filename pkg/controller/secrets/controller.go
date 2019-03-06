@@ -128,7 +128,7 @@ func (c *Controller) processNextWorkItem(ctx context.Context, key string) error 
 var keyFunc = controllerpkg.KeyFunc
 
 const (
-	ControllerName = "certificates"
+	ControllerName = "secret"
 )
 
 func init() {
