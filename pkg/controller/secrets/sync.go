@@ -20,7 +20,13 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		klog.Info("Associated cert manager cert does not exist with this secret")
 		// Decode the certificate in the secret
 		x509crt, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, "tls.crt")
+
 		if error != nil {
+			klog.Infof("Error occurred: %v", error)
+			return nil
+		}
+		key, err := kube.SecretTLSKeyRef(c.secretLister, namespace, secret.ObjectMeta.Name, "tls.key")
+		if err != nil {
 			klog.Infof("Error occurred: %v", error)
 			return nil
 		}
@@ -39,7 +45,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		- Cert spec
 			- duration/expiration: notBefore, notAfter
 			- Issuer reference
-			- Common Name
+			- Common Name - parsed from certificate subject
 			- dns names
 			- isCA - need to verify that both isCa and basicConstraintsvalid is true
 			- keyAlgorithm -- opt
@@ -66,6 +72,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 			}
 		}*/
+
+		klog.Infof("The key: %v", key)
+		
 		return nil
 	}
 	return nil
