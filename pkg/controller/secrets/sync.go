@@ -76,7 +76,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			}
 		}*/
 		ka := x509crt[0].PublicKeyAlgorithm.String()
-		var kalgo &v1alpha1.KeyAlgorithm
+		var kalgo v1alpha1.KeyAlgorithm
 		if ka == "rsa" {
 			kalgo = v1alpha1.RSAKeyAlgorithm
 		} else if ka == "ecdsa" {
