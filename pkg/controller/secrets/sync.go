@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 	"k8s.io/klog"
+	"time"
 	
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
@@ -41,16 +42,18 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		klog.Info("IP Addresses: ", x509crt[0].IPAddresses)
 		klog.Info("Issuer: ", x509crt[0].Issuer)
 		klog.Info("Subject: ", x509crt[0].Subject)
-		/* Info for certificate needed
+		klog.Info("Common name: ", x509crt[0].Subject.CommonName)
+		klog.Info("Algorithm: ", x509crt[0].PublicKeyAlgorithm)
+		/* Info for certificate needed - maybe add a label to the secret indicating installer cert
 		- Cert spec
 			- duration/expiration: notBefore, notAfter
-			- Issuer reference
+			- Issuer reference -- we only have their subject - so all installer based certs should just be root-ca issuer by default
 			- Common Name - parsed from certificate subject
-			- dns names
+			- dns names 
 			- isCA - need to verify that both isCa and basicConstraintsvalid is true
 			- keyAlgorithm -- opt
 			- keySize -- opt
-			- secretName
+			- secretName -- this secret
 		- Cert status 
 			- Condition
 			- notAfter - expiration of cert stored in secret 
@@ -72,9 +75,33 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 			}
 		}*/
-
-		klog.Infof("The key: %v", key)
+		ka := x509crt[0].PublicKeyAlgorithm.String()
+		cn := x509crt[0].Subject.CommonName
+		ca := x509crt[0].IsCA
+		dur := x509crt[0].NotAfter.Sub(time.Now())
+		crt = &v1alpha1.Certificate {
+			ObjectMeta: metav1.ObjectMeta {
+				Name: cn,
+				Namespace: namespace,
+			},
+			Spec: v1alpha1.CertificateSpec {
+				commonName: cn,
+				dnsNames: make([]string),
+				isCA: ca,
+				SecretName: secret.ObjectMeta.Name,
+				issuerRef: v1alpha1.ObjectReference {
+					kind: "ClusterIssuer",
+					name: "icp-ca-issuer",
+				},
+				keyAlgorithm: ka,
+				duration: dur,
+			}
+		}
 		
+		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
+		klog.Infof("Created the certificate object: %v", crt)
+		//klog.Infof("The key: %v", key)
+
 		return nil
 	}
 	return nil
