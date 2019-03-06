@@ -4,7 +4,7 @@ import (
 	"context"
 	"k8s.io/klog"
 	"time"
-	
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/util/kube"
@@ -87,6 +87,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		cn := x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		dur := x509crt[0].NotAfter.Sub(time.Now())
+		dur = &metav1.Time {
+			time: dur
+		}
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
 				Name: cn,
@@ -113,6 +116,6 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		return nil
 	}
 	return nil
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// 
 	// 
 }
