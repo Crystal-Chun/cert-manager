@@ -106,7 +106,7 @@ func (c *Controller) worker(stopCh <-chan struct{}) {
 
 func (c *Controller) processNextWorkItem(ctx context.Context, key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	klog.Info("Next work item: \nNamespace: %s, Name: %s", namespace, name)
+	klog.Infof("Next work item: \nNamespace: %s, Name: %s", namespace, name)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil

@@ -24,9 +24,10 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Error occurred: %v", error)
 			return nil
 		}
-		klog.Info("The certificate: ")
-		klog.Infof("Not Before: ", x509crt[0].NotBefore.String())
-		klog.Infof("Not After: ", x509crt[0].NotAfter.String())
+		klog.Infof("Cert length: %d", len(x509crt))
+		klog.Infof("The certificate: %v", x509crt[0])
+		klog.Infof("Not Before: %s", x509crt[0].NotBefore.String())
+		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
 		klog.Info("IsCa: ", x509crt[0].IsCA)
 		klog.Info("DNS Names: ", x509crt[0].DNSNames)
 		klog.Infof("The namespace: %s", namespace)
