@@ -87,7 +87,10 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		}
 		cn := x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
+		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
+		klog.Infof("Time now: ", time.Now().String())
 		dur := x509crt[0].NotAfter.Sub(time.Now())
+		klog.Infof("The duration: %v", dur)
 		newDur := &metav1.Duration {
 			Duration: dur,
 		}
