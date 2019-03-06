@@ -89,7 +89,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		ca := x509crt[0].IsCA
 		dur := x509crt[0].NotAfter.Sub(time.Now())
 		dur = &metav1.Duration {
-			time: dur,
+			Duration: dur,
 		}
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
@@ -98,7 +98,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			},
 			Spec: v1alpha1.CertificateSpec {
 				CommonName: cn,
-				DNSNames: []string,
+				DNSNames: make([]string, 0),
 				IsCA: ca,
 				SecretName: secret.ObjectMeta.Name,
 				IssuerRef: v1alpha1.ObjectReference {
