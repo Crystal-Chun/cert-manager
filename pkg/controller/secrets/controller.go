@@ -9,13 +9,15 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	corelisters "k8s.io/client-go/listers/core/v1"
-
+	
 	controllerpkg "github.com/jetstack/cert-manager/pkg/controller"
 	
 	cmlisters "github.com/jetstack/cert-manager/pkg/client/listers/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/scheduler"
+	"github.com/jetstack/cert-manager/pkg/util"
 )
 
 type Controller struct {
@@ -48,16 +50,16 @@ func New(ctx *controllerpkg.Context) *Controller {
 	ctrl.syncedFuncs = append(ctrl.syncedFuncs, certificateInformer.Informer().HasSynced)
 
 	secretInformer := ctrl.KubeSharedInformerFactory.Core().V1().Secrets()
-	secretsInformer.Informer().AddEventHandler(&controllerpkg.BlockingEventHandler{WorkFunc: ctrl.handleSecretResource})
-	ctrl.secretLister = secretsInformer.Lister()
-	ctrl.syncedFuncs = append(ctrl.syncedFuncs, secretsInformer.Informer().HasSynced)
+	secretInformer.Informer().AddEventHandler(&controllerpkg.BlockingEventHandler{WorkFunc: ctrl.handleSecretResource})
+	ctrl.secretLister = secretInformer.Lister()
+	ctrl.syncedFuncs = append(ctrl.syncedFuncs, secretInformer.Informer().HasSynced)
 
 	return ctrl
 }
 
 func (c *Controller) Run(workers int, stopCh <-chan struct{}) error {
 	klog.Info("Running secrets controller")
-	if !cache.WaitForCacheSync(stopch, c.syncedFuncts...) {
+	if !cache.WaitForCacheSync(stopCh, c.syncedFuncs...) {
 		return fmt.Errorf("error waiting for informer caches to sync")
 	}
 

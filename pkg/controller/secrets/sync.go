@@ -4,7 +4,7 @@ import (
 	"context"
 	"k8s.io/klog"
 	
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	
 )
