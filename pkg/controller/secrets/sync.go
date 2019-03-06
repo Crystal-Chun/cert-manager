@@ -1,17 +1,17 @@
 package secrets
 
 import (
-	"os"
 	"context"
 	"k8s.io/klog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
-	"github.com/jetstack/cert-manager/pkg/util/kube"
+	
 )
 
 func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
 	klog.Infof("%v", secret)
-
+	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
 	crtName := secret.Labels[v1alpha1.CertificateNameKey]
 	crt, _ := c.certificateLister().Certificate(namespace).Get(crtName)
