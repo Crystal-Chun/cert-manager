@@ -24,7 +24,29 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Error occurred: %v", error)
 			return nil
 		}
-		klog.Infof("The certificate: %v", x509crt[0])
+		klog.Info("The certificate: ")
+		klog.Infof("Not Before: ", x509crt[0].NotBefore.String())
+		klog.Infof("Not After: ", x509crt[0].NotAfter.String())
+		klog.Info("IsCa: ", x509crt[0].IsCA)
+		klog.Info("DNS Names: ", x509crt[0].DNSNames)
+		klog.Infof("The namespace: %s", namespace)
+		/* Info for certificate needed
+		- Cert spec
+			- duration/expiration: notBefore, notAfter
+			- Issuer reference
+			- Common Name
+			- dns names
+			- isCA
+			- keyAlgorithm -- opt
+			- keySize -- opt
+			- secretName
+		- Cert status 
+			- Condition
+			- notAfter - expiration of cert stored in secret 
+		- ObjectMeta
+			- namespace 
+			- name
+		*/
 		// Create the cert manager certificate
 		/*crt = &v1alpha1.Certificate{
 			TypeMeta: metav1.TypeMeta
