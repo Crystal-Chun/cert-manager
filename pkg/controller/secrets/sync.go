@@ -31,13 +31,17 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		klog.Info("IsCa: ", x509crt[0].IsCA)
 		klog.Info("DNS Names: ", x509crt[0].DNSNames)
 		klog.Infof("The namespace: %s", namespace)
+		klog.Info("EmailAddresses ", x509crt[0].EmailAddresses)
+		klog.Info("IP Addresses: ", x509crt[0].IPAddresses)
+		klog.Info("Issuer: ", x509crt[0].Issuer)
+		klog.Info("Subject: ", x509crt[0].Subject)
 		/* Info for certificate needed
 		- Cert spec
 			- duration/expiration: notBefore, notAfter
 			- Issuer reference
 			- Common Name
 			- dns names
-			- isCA
+			- isCA - need to verify that both isCa and basicConstraintsvalid is true
 			- keyAlgorithm -- opt
 			- keySize -- opt
 			- secretName
