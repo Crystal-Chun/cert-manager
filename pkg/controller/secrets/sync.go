@@ -95,7 +95,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				},
 				keyAlgorithm: ka,
 				duration: dur,
-			}
+			},
 		}
 		
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
