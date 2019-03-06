@@ -3,7 +3,7 @@ package secrets
 import (
 	"context"
 	"k8s.io/klog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	
@@ -34,5 +34,6 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
 			}
 		}*/
 	}
-
+	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// "github.com/jetstack/cert-manager/pkg/util/kube"
 }

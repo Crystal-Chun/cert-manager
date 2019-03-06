@@ -19,7 +19,7 @@ import (
 )
 
 type Controller struct {
-	*controllerpkg.context
+	*controllerpkg.Context
 
 	syncHandler func(ctx context.Context, key string) error
 
