@@ -88,7 +88,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		ca := x509crt[0].IsCA
 		dur := x509crt[0].NotAfter.Sub(time.Now())
 		dur = &metav1.Time {
-			time: dur
+			time: dur,
 		}
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
