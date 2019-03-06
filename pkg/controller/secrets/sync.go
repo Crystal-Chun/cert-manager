@@ -12,7 +12,7 @@ import (
 )
 
 func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
-	klog.Infof("%v", secret.Data)
+	//klog.Infof("%v", secret.Data)
 	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
 	crtName := secret.Labels[v1alpha1.CertificateNameKey]
