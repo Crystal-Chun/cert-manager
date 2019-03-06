@@ -14,7 +14,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) {
 	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
 	crtName := secret.Labels[v1alpha1.CertificateNameKey]
-	crt, _ := c.certificateLister.Certificate(namespace).Get(crtName)
+	crt, _ := c.certificateLister.Certificates(namespace).Get(crtName)
 	if crt == nil {
 		klog.Info("Associated cert manager cert does not exist with this secret")
 		// Decode the certificate in the secret
