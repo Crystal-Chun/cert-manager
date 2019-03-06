@@ -10,7 +10,7 @@ import (
 )
 
 func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
-	klog.Infof("%v", secret)
+	klog.Infof("%v", secret.Data)
 	namespace := secret.ObjectMeta.Namespace
 	// Figure out if certificate has associated cert manager certificate
 	crtName := secret.Labels[v1alpha1.CertificateNameKey]
@@ -18,7 +18,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 	if crt == nil {
 		klog.Info("Associated cert manager cert does not exist with this secret")
 		// Decode the certificate in the secret
-		//x509crt := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, )
+		x509crt, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, "cert")
+		if error != nil {
+			klog.Infof("Error occurred: %v", error)
+			return nil
+		}
+		klog.Infof("The certificate: %v", x509crt)
 		// Create the cert manager certificate
 		/*crt = &v1alpha1.Certificate{
 			TypeMeta: metav1.TypeMeta
