@@ -72,10 +72,10 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 		// I'm confused, are all SANS also DNSNames?
 		dns := make([]string, 0)
-		if commonName != "" {
+		/*if commonName != "" {
 			klog.Info("Appending common name to dns name")
 			dns = append(dns, commonName)
-		}
+		}*/
 		klog.Info("The dns: ", dns)
 		klog.Infof("The common name: %s", commonName)
 		if len(cert.DNSNames) > 0 {
