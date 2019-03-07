@@ -33,7 +33,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		// Get the certificates in the secret
 		certificates, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, keyName)
 		klog.Infof("Cert length: %d", len(certificates))
-		
+
 		if error != nil {
 			klog.Infof("Error occurred getting the certificate from the secret: %v", error)
 			return nil
@@ -43,7 +43,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		// Get values for the cert-manager certificate object.
 		secretName := secret.ObjectMeta.Name
 
-		certName := secrets.Labels[certificateName]
+		certName := secret.Labels[certificateName]
 		if certName == "" {
 			certName = secretName
 		}
@@ -63,10 +63,10 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		var cmKeyAlgorithm v1alpha1.KeyAlgorithm
 		if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
 			cmKeyAlgorithm = v1alpha1.RSAKeyAlgorithm
-		} else if ka == "ecdsa" || ka == "ECDSA" {
-			kalgo = v1alpha1.ECDSAKeyAlgorithm
+		} else if keyAlgorithm == "ecdsa" || keyAlgorithm == "ECDSA" {
+			cmKeyAlgorithm = v1alpha1.ECDSAKeyAlgorithm
 		} else {
-			klog.Infof("Invalid key algorithm %s", ka)
+			klog.Infof("Invalid key algorithm %s", keyAlgorithm)
 			return nil
 		}
 
