@@ -111,7 +111,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			} else  {
 				klog.Infof("The returned secret %v", sec)
 				newc, error := kube.SecretTLSCertName(c.secretLister, namespace, sec.ObjectMeta.Name, keyName)
-				klog.Info("New cert dns names: ", newc.DNSNames)
+				klog.Info("New cert dns names: ", newc[0].DNSNames)
 			}
 		}
 
