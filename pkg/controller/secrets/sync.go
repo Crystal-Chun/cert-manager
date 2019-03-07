@@ -81,9 +81,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		if len(cert.DNSNames) > 0 {
 			klog.Info("Appending more dns names to dns")
 			for _, dnsName := range cert.DNSNames {
+				klog.Info("Dns name: %s", dnsName)
 				dns = append(dns, dnsName)
 			}
 		}
+
+		klog.Info("The final dns: ", dns)
 
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
