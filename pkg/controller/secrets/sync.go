@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/util/kube"
+	"github.com/jetstack/cert-manager/pkg/util/pki"
 	
 )
 
@@ -87,7 +88,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				cert.DNSNames = append(cert.DNSNames, dnsName)
 			}
 			certificates[0].DNSNames = cert.DNSNames
-			secret.Data[keyName] = certificates
+			secret.Data[keyName] = pki.EncodeX509Chain(certificates)
 			c.Client.CoreV1().Secrets(namespace).Update(secret)
 		}
 
