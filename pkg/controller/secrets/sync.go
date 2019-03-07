@@ -78,20 +78,41 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		}
 
 		if len(cert.DNSNames) > 0 {
+			klog.Info("Length of dns names: ", len(cert.DNSNames))
+			
 			for _, dnsName := range cert.DNSNames {
 				klog.Info("Dns name: %s", dnsName)
 				dnsNames = append(dnsNames, dnsName)
 			}
 		} else {
+			klog.Info("No DNS Names")
 			// The certificate doesn't have any dns names, so append the common name at least
 			for _, dnsName := range dnsNames {
+				klog.Infof("Adding dnsName: %s", dnsName)
 				cert.DNSNames = append(cert.DNSNames, dnsName)
 			}
+			klog.Info("Cert's DNSNames: ", cert.DNSNames)
+			klog.Infof("Old cert: %v", certificates[0])
+			klog.Infof("New cert: %v", cert)
 			certificates[0] = cert
-			certPem, _ := pki.EncodeX509(certificates[0])
-			chainPem, _ := pki.EncodeX509Chain(certificates)
-			secret.Data[keyName] = append(certPem, chainPem...)
-			c.Client.CoreV1().Secrets(namespace).Update(secret)
+			klog.Infof("Updated cert: %v")
+			certPem, err := pki.EncodeX509(certificates[0])
+			if err != nil {
+				klog.Info("error occurred encoding x509 certificate")
+				klog.Info(err)
+			}
+			
+			secret.Data[keyName] = certPem
+			klog.Info(secret.Data[keyName])
+			sec, err := c.Client.CoreV1().Secrets(namespace).Update(secret)
+			if err != nil {
+				klog.Info("Error occurred updating secret")
+				klog.Info(err)
+			} else  {
+				klog.Infof("The returned secret %v", sec)
+				newc, error := kube.SecretTLSCertName(c.secretLister, namespace, sec.ObjectMeta.Name, keyName)
+				klog.Info("New cert dns names: ", newc.DNSNames)
+			}
 		}
 
 		// Create the certificate object.
