@@ -29,10 +29,11 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		klog.Info("Creating cert-manager Certificate for installer-based certificate")
 		
 		keyName := secret.Labels[certificateKeyName]
-		klog.Infof("Cert length: %d", len(certificates))
+		
 		// Get the certificates in the secret
 		certificates, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, keyName)
-
+		klog.Infof("Cert length: %d", len(certificates))
+		
 		if error != nil {
 			klog.Infof("Error occurred getting the certificate from the secret: %v", error)
 			return nil
@@ -81,7 +82,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			}
 		}
 
-		crt = &v1alpha1.Certificate {
+		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
 				Name: certName,
 				Namespace: namespace,
@@ -95,7 +96,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 					Kind: "ClusterIssuer",
 					Name: "icp-ca-issuer",
 				},
-				KeyAlgorithm: keyAlgorithm,
+				KeyAlgorithm: cmKeyAlgorithm,
 				Duration: durationObject,
 			},
 		}
