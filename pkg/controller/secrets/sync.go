@@ -79,6 +79,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		klog.Info("The dns: ", dns)
 		klog.Infof("The common name: %s", commonName)
 		if len(cert.DNSNames) > 0 {
+			klog.Info("Appending more dns names to dns")
 			for _, dnsName := range cert.DNSNames {
 				dns = append(dns, dnsName)
 			}
