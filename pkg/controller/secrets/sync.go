@@ -86,7 +86,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			return nil
 		}
 		
-		cn := secret.ObjectMeta.Name // x509crt[0].Subject.CommonName
+		cn := x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
 		klog.Infof("Time now: ", time.Now().String())
@@ -95,12 +95,19 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		newDur := &metav1.Duration {
 			Duration: dur,
 		}
+		
+		dns := make([]string, 0)
+		if cn != "" {
+			dns = append(dns, cn)
+			
+		}
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
 				Name: cn,
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.CertificateSpec {
+				CommonName: cn,
 				DNSNames: dns,
 				IsCA: ca,
 				SecretName: cn,
@@ -112,12 +119,6 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				Duration: newDur,
 			},
 		}
-		dns := make([]string, 0)
-		if cn != "" {
-			dns = append(dns, cn)
-			crt.Spec.CommonName = cn
-		}
-		
 		
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
