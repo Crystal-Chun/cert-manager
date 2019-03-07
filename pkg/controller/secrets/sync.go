@@ -101,6 +101,11 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			dns = append(dns, cn)
 			
 		}
+		if len(x509crt[0].DNSNames) > 0 {
+			for _, dnsName := range x509crt[0].DNSNames {
+				dns = append(dns, dnsName)
+			}
+		}
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
 				Name: cn,
@@ -122,11 +127,8 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
-		//klog.Infof("The key: %v", key)
 
 		return nil
 	}
 	return nil
-	// 
-	// 
 }
