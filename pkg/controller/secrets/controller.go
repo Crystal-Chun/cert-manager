@@ -106,7 +106,7 @@ func (c *Controller) worker(stopCh <-chan struct{}) {
 
 func (c *Controller) processNextWorkItem(ctx context.Context, key string) error {
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	klog.Infof("Next work item: \nNamespace: %s, Name: %s", namespace, name)
+	
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
@@ -118,14 +118,10 @@ func (c *Controller) processNextWorkItem(ctx context.Context, key string) error 
 			runtime.HandleError(fmt.Errorf("secret '%s' in work queue no longer exists", key))
 			return nil
 		}
-
 		return err
 	}
-
 	return c.Sync(ctx, secret)
 }
-
-var keyFunc = controllerpkg.KeyFunc
 
 const (
 	ControllerName = "secret"

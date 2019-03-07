@@ -84,6 +84,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				klog.Info("Dns name: %s", dnsName)
 				dns = append(dns, dnsName)
 			}
+		} else {
+			// The certificate doesn't have any dns names, so append the common name at least
+			cert.DNSNames = append(cert.DNSNames, dns)
 		}
 
 		klog.Info("The final dns: ", dns)
