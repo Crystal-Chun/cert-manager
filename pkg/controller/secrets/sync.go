@@ -115,7 +115,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				CommonName: cn,
 				DNSNames: dns,
 				IsCA: ca,
-				SecretName: cn,
+				SecretName: secret.ObjectMeta.Name,
 				IssuerRef: v1alpha1.ObjectReference {
 					Kind: "ClusterIssuer",
 					Name: "icp-ca-issuer",
