@@ -11,117 +11,92 @@ import (
 	
 )
 
+const (
+	createCertificate	 	= 	"create-certificate"
+	certificateName			= 	"certificate-name"
+	certificateKeyName 		= 	"certificate-key"
+)
+
 func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
-	//klog.Infof("%v", secret.Data)
 	namespace := secret.ObjectMeta.Namespace
-	// Figure out if certificate has associated cert manager certificate
-	crtName := secret.Labels[v1alpha1.CertificateNameKey]
-	crt, _ := c.certificateLister.Certificates(namespace).Get(crtName)
-	if crt == nil {
-		klog.Info("Associated cert manager cert does not exist with this secret")
-		// Decode the certificate in the secret
-		x509crt, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, "tls.crt")
+	certManagerCert := secret.Labels[v1alpha1.CertificateNameKey]
+	existingCertificate, _ := c.certificateLister.Certificates(namespace).Get(certManagerCert)
+
+	createLabel := secret.Labels[createCertificate]
+
+	// If a cert manager Certificate doesn't exist and the label exists, create a cert-manager Certificate from this secret
+	if existingCertificate == nil && createLabel == "installer" {
+		klog.Info("Creating cert-manager Certificate for installer-based certificate")
+		
+		keyName := secrets.Labels[certificateKeyName]
+		klog.Infof("Cert length: %d", len(certificates))
+		// Get the certificates in the secret
+		certificates, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, keyName)
 
 		if error != nil {
-			klog.Infof("Error occurred: %v", error)
+			klog.Infof("Error occurred getting the certificate from the secret: %v", error)
 			return nil
 		}
-		/* key, err := kube.SecretTLSKeyRef(c.secretLister, namespace, secret.ObjectMeta.Name, "tls.key")
-		if err != nil {
-			klog.Infof("Error occurred: %v", error)
-			return nil
-		} */
-		klog.Infof("Cert length: %d", len(x509crt))
-		// klog.Infof("The certificate: %v", x509crt[0])
-		klog.Infof("Not Before: %s", x509crt[0].NotBefore.String())
-		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
-		klog.Info("IsCa: ", x509crt[0].IsCA)
-		klog.Info("DNS Names: ", x509crt[0].DNSNames)
-		klog.Infof("The namespace: %s", namespace)
-		klog.Info("EmailAddresses ", x509crt[0].EmailAddresses)
-		klog.Info("IP Addresses: ", x509crt[0].IPAddresses)
-		klog.Info("Issuer: ", x509crt[0].Issuer)
-		klog.Info("Subject: ", x509crt[0].Subject)
-		klog.Info("Common name: ", x509crt[0].Subject.CommonName)
-		klog.Info("Algorithm: ", x509crt[0].PublicKeyAlgorithm)
-		/* Info for certificate needed - maybe add a label to the secret indicating installer cert
-		- Cert spec
-			- duration/expiration: notBefore, notAfter
-			- Issuer reference -- we only have their subject - so all installer based certs should just be root-ca issuer by default
-			- Common Name - parsed from certificate subject
-			- dns names 
-			- isCA - need to verify that both isCa and basicConstraintsvalid is true
-			- keyAlgorithm -- opt
-			- keySize -- opt
-			- secretName -- this secret
-		- Cert status 
-			- Condition
-			- notAfter - expiration of cert stored in secret 
-		- ObjectMeta
-			- namespace 
-			- name
-		*/
-		// Create the cert manager certificate
-		/*crt = &v1alpha1.Certificate{
-			TypeMeta: metav1.TypeMeta
-			ObjectMeta: metav1.ObjectMeta{
-				Name: 
-				Namespace: namespace,
-			},
-			Spec: v1alpha1.CertificateSpec{
-				SecretName: secret.ObjectMeta.Name
-			},
-			Status: v1alpha1.CertificateStatus{
+		// Fail here if cert length less than 1? 
+		cert := certificates[0]
+		// Get values for the cert-manager certificate object.
+		secretName := secret.ObjectMeta.Name
 
-			}
-		}*/
-		ka := x509crt[0].PublicKeyAlgorithm.String()
-		var kalgo v1alpha1.KeyAlgorithm
-		if ka == "rsa" || ka == "RSA" {
-			kalgo = v1alpha1.RSAKeyAlgorithm
+		certName := secrets.Labels[certificateName]
+		if certName == "" {
+			certName = secretName
+		}
+
+		commonName := cert.Subject.CommonName
+		isCA := cert.IsCA
+
+		duration := cert.NotAfter.Sub(time.Now())
+		
+		durationObject := &metav1.Duration {
+			Duration: duration,
+		}
+		// Check duration less than one hour and duration less than renewBefore - check if validation func already exists
+
+		// Check if there's a validation function for this
+		keyAlgorithm := cert.PublicKeyAlgorithm.String()
+		var cmKeyAlgorithm v1alpha1.KeyAlgorithm
+		if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
+			cmKeyAlgorithm = v1alpha1.RSAKeyAlgorithm
 		} else if ka == "ecdsa" || ka == "ECDSA" {
 			kalgo = v1alpha1.ECDSAKeyAlgorithm
 		} else {
 			klog.Infof("Invalid key algorithm %s", ka)
 			return nil
 		}
-		
-		cn := x509crt[0].Subject.CommonName
-		ca := x509crt[0].IsCA
-		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
-		klog.Infof("Time now: ", time.Now().String())
-		dur := x509crt[0].NotAfter.Sub(time.Now())
-		klog.Infof("The duration: %v", dur)
-		newDur := &metav1.Duration {
-			Duration: dur,
-		}
-		
+
+		// I'm confused, are all SANS also DNSNames?
 		dns := make([]string, 0)
-		if cn != "" {
-			dns = append(dns, cn)
-			
+		if commonName != "" {
+			dns = append(dns, commonName)
 		}
-		if len(x509crt[0].DNSNames) > 0 {
-			for _, dnsName := range x509crt[0].DNSNames {
+
+		if len(cert.DNSNames) > 0 {
+			for _, dnsName := range cert.DNSNames {
 				dns = append(dns, dnsName)
 			}
 		}
+
 		crt = &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
-				Name: cn,
+				Name: certName,
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.CertificateSpec {
-				CommonName: cn,
+				CommonName: commonName,
 				DNSNames: dns,
-				IsCA: ca,
-				SecretName: secret.ObjectMeta.Name,
+				IsCA: isCA,
+				SecretName: secretName,
 				IssuerRef: v1alpha1.ObjectReference {
 					Kind: "ClusterIssuer",
 					Name: "icp-ca-issuer",
 				},
-				KeyAlgorithm: kalgo,
-				Duration: newDur,
+				KeyAlgorithm: keyAlgorithm,
+				Duration: durationObject,
 			},
 		}
 		
