@@ -87,7 +87,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			for _, dnsName := range dnsNames {
 				cert.DNSNames = append(cert.DNSNames, dnsName)
 			}
-			certificates[0].DNSNames = cert.DNSNames
+			certificates[0] = cert
 			certPem, _ := pki.EncodeX509(certificates[0])
 			chainPem, _ := pki.EncodeX509Chain(certificates)
 			secret.Data[keyName] = append(certPem, chainPem...)
