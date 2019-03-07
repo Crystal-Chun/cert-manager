@@ -134,6 +134,7 @@ func (c *Controller) Sync(ctx context.Context, crt *v1alpha1.Certificate) (err e
 	}
 
 	if key == nil || cert == nil {
+		klog.Info("1")
 		klog.V(4).Infof("Invoking issue function as existing certificate does not exist")
 		return c.issue(ctx, i, crtCopy)
 	}
@@ -141,6 +142,7 @@ func (c *Controller) Sync(ctx context.Context, crt *v1alpha1.Certificate) (err e
 	// begin checking if the TLS certificate is valid/needs a re-issue or renew
 	matches, matchErrs := c.certificateMatchesSpec(crtCopy, key, cert)
 	if !matches {
+		klog.Info("2")
 		klog.V(4).Infof("Invoking issue function due to certificate not matching spec: %s", strings.Join(matchErrs, ", "))
 		return c.issue(ctx, i, crtCopy)
 	}
@@ -148,6 +150,7 @@ func (c *Controller) Sync(ctx context.Context, crt *v1alpha1.Certificate) (err e
 	// check if the certificate needs renewal
 	needsRenew := c.Context.IssuerOptions.CertificateNeedsRenew(cert, crt)
 	if needsRenew {
+		klog.Info("3")
 		klog.V(4).Infof("Invoking issue function due to certificate needing renewal")
 		return c.issue(ctx, i, crtCopy)
 	}
@@ -215,7 +218,7 @@ func (c *Controller) certificateMatchesSpec(crt *v1alpha1.Certificate, key crypt
 	// validate the dns names are correct
 	expectedDNSNames := pki.DNSNamesForCertificate(crt)
 	if !util.EqualUnsorted(cert.DNSNames, expectedDNSNames) {
-		errs = append(errs, fmt.Sprintf("DNS names on TLS certificate not up to date: %q", cert.DNSNames))
+		errs = append(errs, fmt.Sprintf("DNS names on TLS certificate not up to date: %q, %q", cert.DNSNames, expectedDNSNames))
 	}
 
 	// validate the ip addresses are correct
@@ -269,6 +272,7 @@ func ownerRef(crt *v1alpha1.Certificate) metav1.OwnerReference {
 }
 
 func (c *Controller) updateSecret(crt *v1alpha1.Certificate, namespace string, cert, key, ca []byte) (*corev1.Secret, error) {
+	klog.Info("~~~~~~~~~~~~~~~~~~~Updating secret~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	secret, err := c.secretLister.Secrets(namespace).Get(crt.Spec.SecretName)
 	if err != nil && !k8sErrors.IsNotFound(err) {
 		return nil, err
@@ -287,6 +291,7 @@ func (c *Controller) updateSecret(crt *v1alpha1.Certificate, namespace string, c
 	if secret.Data == nil {
 		secret.Data = map[string][]byte{}
 	}
+	klog.Infof("Certificate stored: %v", cert)
 	secret.Data[corev1.TLSCertKey] = cert
 	secret.Data[corev1.TLSPrivateKeyKey] = key
 	secret.Data[TLSCAKey] = ca
@@ -318,12 +323,14 @@ func (c *Controller) updateSecret(crt *v1alpha1.Certificate, namespace string, c
 
 	// if it is a new resource
 	if secret.SelfLink == "" {
+		klog.Info("New secret created")
 		enableOwner := c.CertificateOptions.EnableOwnerRef
 		if enableOwner {
 			secret.SetOwnerReferences(append(secret.GetOwnerReferences(), ownerRef(crt)))
 		}
 		secret, err = c.Client.CoreV1().Secrets(namespace).Create(secret)
 	} else {
+		klog.Info("Old secret updated")
 		secret, err = c.Client.CoreV1().Secrets(namespace).Update(secret)
 	}
 	if err != nil {

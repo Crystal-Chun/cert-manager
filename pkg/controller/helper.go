@@ -87,6 +87,6 @@ func (o IssuerOptions) CalculateDurationUntilRenew(cert *x509.Certificate, crt *
 	durationUntilExpiry := cert.NotAfter.Sub(now())
 	// calculate how long until we should start attempting to renew the certificate
 	renewIn := durationUntilExpiry - renewBefore
-
+	klog.Info("Renewing in: ", renewIn)
 	return renewIn
 }

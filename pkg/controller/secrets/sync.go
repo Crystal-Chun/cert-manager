@@ -32,7 +32,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			return nil
 		} */
 		klog.Infof("Cert length: %d", len(x509crt))
-		klog.Infof("The certificate: %v", x509crt[0])
+		// klog.Infof("The certificate: %v", x509crt[0])
 		klog.Infof("Not Before: %s", x509crt[0].NotBefore.String())
 		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
 		klog.Info("IsCa: ", x509crt[0].IsCA)
@@ -85,7 +85,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Invalid key algorithm %s", ka)
 			return nil
 		}
-		cn := x509crt[0].Subject.CommonName
+		cn := secret.ObjectMeta.Name // x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
 		klog.Infof("Time now: ", time.Now().String())
@@ -103,7 +103,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				CommonName: cn,
 				DNSNames: make([]string, 0),
 				IsCA: ca,
-				SecretName: secret.ObjectMeta.Name,
+				SecretName: cn,
 				IssuerRef: v1alpha1.ObjectReference {
 					Kind: "ClusterIssuer",
 					Name: "icp-ca-issuer",
