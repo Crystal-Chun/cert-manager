@@ -71,25 +71,27 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		}
 
 		// I'm confused, are all SANS also DNSNames?
-		dns := make([]string, 0)
-		/*if commonName != "" {
+		dnsNames := make([]string, 0)
+		if commonName != "" {
 			klog.Info("Appending common name to dns name")
-			dns = append(dns, commonName)
-		}*/
-		klog.Info("The dns: ", dns)
+			dnsNames = append(dnsNames, commonName)
+		}
+		klog.Info("The dns: ", dnsNames)
 		klog.Infof("The common name: %s", commonName)
 		if len(cert.DNSNames) > 0 {
 			klog.Info("Appending more dns names to dns")
 			for _, dnsName := range cert.DNSNames {
 				klog.Info("Dns name: %s", dnsName)
-				dns = append(dns, dnsName)
+				dnsNames = append(dnsNames, dnsName)
 			}
 		} else {
 			// The certificate doesn't have any dns names, so append the common name at least
-			cert.DNSNames = append(cert.DNSNames, dns)
+			for _, dnsName := range dnsNames {
+				cert.DNSNames = append(cert.DNSNames, dnsName)
+			}
 		}
 
-		klog.Info("The final dns: ", dns)
+		klog.Info("The final dns: ", dnsNames)
 
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
@@ -98,7 +100,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			},
 			Spec: v1alpha1.CertificateSpec {
 				CommonName: commonName,
-				DNSNames: dns,
+				DNSNames: dnsNames,
 				IsCA: isCA,
 				SecretName: secretName,
 				IssuerRef: v1alpha1.ObjectReference {
