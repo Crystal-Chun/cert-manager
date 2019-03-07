@@ -28,7 +28,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 	if existingCertificate == nil && createLabel == "installer" {
 		klog.Info("Creating cert-manager Certificate for installer-based certificate")
 		
-		keyName := secrets.Labels[certificateKeyName]
+		keyName := secret.Labels[certificateKeyName]
 		klog.Infof("Cert length: %d", len(certificates))
 		// Get the certificates in the secret
 		certificates, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, keyName)
