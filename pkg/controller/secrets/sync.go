@@ -73,13 +73,10 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		// I'm confused, are all SANS also DNSNames?
 		dnsNames := make([]string, 0)
 		if commonName != "" {
-			klog.Info("Appending common name to dns name")
 			dnsNames = append(dnsNames, commonName)
 		}
-		klog.Info("The dns: ", dnsNames)
-		klog.Infof("The common name: %s", commonName)
+
 		if len(cert.DNSNames) > 0 {
-			klog.Info("Appending more dns names to dns")
 			for _, dnsName := range cert.DNSNames {
 				klog.Info("Dns name: %s", dnsName)
 				dnsNames = append(dnsNames, dnsName)
@@ -89,10 +86,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			for _, dnsName := range dnsNames {
 				cert.DNSNames = append(cert.DNSNames, dnsName)
 			}
+			certificates[0] = cert.DNSNames
+			secret.Data[keyName] = certificates
+			c.Client.CoreV1().Secrets(namespace).Update(secret)
 		}
 
-		klog.Info("The final dns: ", dnsNames)
-
+		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
 				Name: certName,
