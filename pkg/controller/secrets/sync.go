@@ -85,6 +85,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Invalid key algorithm %s", ka)
 			return nil
 		}
+		
 		cn := secret.ObjectMeta.Name // x509crt[0].Subject.CommonName
 		ca := x509crt[0].IsCA
 		klog.Infof("Not After: %s", x509crt[0].NotAfter.String())
@@ -100,8 +101,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.CertificateSpec {
-				CommonName: cn,
-				DNSNames: make([]string, 0),
+				DNSNames: dns,
 				IsCA: ca,
 				SecretName: cn,
 				IssuerRef: v1alpha1.ObjectReference {
@@ -112,6 +112,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				Duration: newDur,
 			},
 		}
+		dns := make([]string, 0)
+		if cn != "" {
+			dns = append(dns, cn)
+			crt.Spec.CommonName = cn
+		}
+		
 		
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
