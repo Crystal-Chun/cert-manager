@@ -90,7 +90,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			certificates[0].DNSNames = cert.DNSNames
 			certPem, _ := pki.EncodeX509(certificates[0])
 			chainPem, _ := pki.EncodeX509Chain(certificates)
-			secret.Data[keyName], _ = append(certPem, chainPem...)
+			secret.Data[keyName] = append(certPem, chainPem...)
 			c.Client.CoreV1().Secrets(namespace).Update(secret)
 		}
 
