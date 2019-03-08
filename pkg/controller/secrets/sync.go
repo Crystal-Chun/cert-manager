@@ -106,9 +106,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		block, _ := pem.Decode(keyBytes)
 		key2, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
 		klog.Infof("The key2: %v", key2)
-		klog.Infof("Public part: %v", key2.Public())
-		klog.Infof("The n: %v", key2.Public().N)
-		klog.Infof("Size func: %d", key2.Public().Size())
+		klog.Infof("Public part: %v", key2.PublicKey)
+		klog.Infof("The n: %v", key2.PublicKey.N)
+		klog.Infof("Size func: %d", key2.PublicKey.Size())
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
