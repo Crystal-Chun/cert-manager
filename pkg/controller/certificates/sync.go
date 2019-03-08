@@ -135,8 +135,6 @@ func (c *Controller) Sync(ctx context.Context, crt *v1alpha1.Certificate) (err e
 
 	if key == nil || cert == nil {
 		klog.Info("1")
-		klog.Info("key: ", key)
-		klog.Info("cert: ", cert)
 		klog.V(4).Infof("Invoking issue function as existing certificate does not exist")
 		return c.issue(ctx, i, crtCopy)
 	}

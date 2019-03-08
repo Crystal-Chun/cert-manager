@@ -32,20 +32,13 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 	// If a cert manager Certificate doesn't exist and the label exists, create a cert-manager Certificate from this secret
 	if existingCertificate == nil && createLabel == "installer" {
-		klog.Info("Creating cert-manager Certificate for installer-based certificate")
+		klog.V(4)Info("Creating cert-manager Certificate for installer-based certificate")
 		
-		keyName := secret.Labels[certificateKeyName]
-		
-		// Get the certificates in the secret
-		certificates, error := kube.SecretTLSCertName(c.secretLister, namespace, secret.ObjectMeta.Name, keyName)
-		klog.Infof("Cert length: %d", len(certificates))
-
-		if error != nil {
-			klog.Infof("Error occurred getting the certificate from the secret: %v", error)
+		cert, err := getCertificate(ctx, secret)
+		if err != nil {
+			klog.Infof("Error occurred: %s", err)
 			return nil
 		}
-		// Fail here if cert length less than 1? 
-		cert := certificates[0]
 		// Get values for the cert-manager certificate object.
 		secretName := secret.ObjectMeta.Name
 
@@ -64,17 +57,6 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		}
 		// Check duration less than one hour and duration less than renewBefore - check if validation func already exists
 
-		// Check if there's a validation function for this
-		keyAlgorithm := cert.PublicKeyAlgorithm.String()
-		var cmKeyAlgorithm v1alpha1.KeyAlgorithm
-		if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
-			cmKeyAlgorithm = v1alpha1.RSAKeyAlgorithm
-		} else if keyAlgorithm == "ecdsa" || keyAlgorithm == "ECDSA" {
-			cmKeyAlgorithm = v1alpha1.ECDSAKeyAlgorithm
-		} else {
-			klog.Infof("Invalid key algorithm %s", keyAlgorithm)
-			return nil
-		}
 
 		// I'm confused, are all SANS also DNSNames?
 		dnsNames := make([]string, 0)
@@ -93,11 +75,22 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 		dnsNames = removeDuplicates(dnsNames)
 		
+		// Check for ipaddresses here
+		ips := make([]string, 0)
+		if len(cert.IPAddresses > 0) {
+			klog.Info("Length of IP addresses: " len(cert.IPAddresses))
+			for _, ipAddress := range cert.IPAddresses {
+				klog.Info("IP: %s", ipAddress.String())
+				ips = append(ips, ipAddress.String())
+			}
+		}
+		ips = removeDuplicates(ips)
 		
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
-		keySize, err := determineKeySize(key.Public().(*rsa.PublicKey).Size(), cmKeyAlgorithm)
+		publicKeySize := key.Public().(*rsa.PublicKey).Size()
+		keySize, err := determineKeySize(publicKeySize, cmKeyAlgorithm)
 		if err != nil {
 			klog.Info(err)
 			return nil
@@ -112,6 +105,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			Spec: v1alpha1.CertificateSpec {
 				CommonName: commonName,
 				DNSNames: dnsNames,
+				IPAddresses: ips,
 				IsCA: isCA,
 				SecretName: secretName,
 				IssuerRef: v1alpha1.ObjectReference {
@@ -127,25 +121,64 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
 
-		// Update secret metadata
-		if secret.Annotations == nil {
-			secret.Annotations = make(map[string]string)
-		}
-		secret.Annotations[v1alpha1.IssuerNameAnnotationKey] = crt.Spec.IssuerRef.Name
-		secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = crt.Spec.IssuerRef.Kind
-		secret.Annotations[v1alpha1.CommonNameAnnotationKey] = cert.Subject.CommonName
-		secret.Annotations[v1alpha1.AltNamesAnnotationKey] = strings.Join(cert.DNSNames, ",")
-		secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(pki.IPAddressesToString(cert.IPAddresses), ",")
-
-		// Always set the certificate name label on the target secret
-		if secret.Labels == nil {
-			secret.Labels = make(map[string]string)
-		}
-		secret.Labels[v1alpha1.CertificateNameKey] = crt.Name
-		c.Client.CoreV1().Secrets(namespace).Update(secret)
+		upateSecret(crt, secret)
 		return nil
 	}
 	return nil
+}
+
+// Gets the certificate from the secret
+func getCertificate(ctx context.Context, secret *corev1.Secret) (x509.Certificate, error) {
+	keyName := secret.Labels[certificateKeyName]
+	certificates, err := kube.SecretTLSCertName(c.secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name, keyName)
+	klog.Infof("Cert length: %d", len(certificates))
+
+	if err != nil {
+		klog.Infof("Error occurred getting the certificate from the secret: %v", error)
+		return nil, fmt.Sprintf("Error occurred getting the certificate from the secret: %v", error)
+	}
+
+	if len(certificates) < 1 {
+		errMsg := "Error, couldn't get at least one certificate from secret."
+		klog.Info(errMsg)
+		return nil, fmt.Sprint(errMsg)
+	}
+	 
+	cert := certificates[0]
+	return cert, nil
+}
+
+// Check if there's a validation function for this
+func getKeyAlgorithm(publicKeyAlgo string) (v1alpha1.KeyAlgorithm, error) {
+	keyAlgorithm := cert.PublicKeyAlgorithm.String()
+	var cmKeyAlgorithm v1alpha1.KeyAlgorithm
+	if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
+		cmKeyAlgorithm = v1alpha1.RSAKeyAlgorithm
+	} else if keyAlgorithm == "ecdsa" || keyAlgorithm == "ECDSA" {
+		cmKeyAlgorithm = v1alpha1.ECDSAKeyAlgorithm
+	} else {
+		klog.Infof("Invalid key algorithm %s", keyAlgorithm)
+		return nil
+	}
+}
+
+func updateSecret(crt *v1alpha1.Certificate, secret *corev1.Secret) {
+	// Update secret metadata
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+	secret.Annotations[v1alpha1.IssuerNameAnnotationKey] = crt.Spec.IssuerRef.Name
+	secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = crt.Spec.IssuerRef.Kind
+	secret.Annotations[v1alpha1.CommonNameAnnotationKey] = crt.Spec.CommonName
+	secret.Annotations[v1alpha1.AltNamesAnnotationKey] = strings.Join(crt.Spec.DNSNames, ",")
+	secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(pki.IPAddressesToString(crt.Spec.IPAddresses), ",")
+
+	// Always set the certificate name label on the target secret
+	if secret.Labels == nil {
+		secret.Labels = make(map[string]string)
+	}
+	secret.Labels[v1alpha1.CertificateNameKey] = crt.Name
+	c.Client.CoreV1().Secrets(namespace).Update(secret)
 }
 
 func removeDuplicates(in []string) []string {
