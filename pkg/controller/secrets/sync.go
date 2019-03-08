@@ -7,6 +7,7 @@ import (
 	"strings"
 	"crypto/x509"
 	"crypto/rsa"
+	"encoding/pem"
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -91,7 +92,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		} 
 
 		dnsNames = removeDuplicates(dnsNames)
-		keySize, err := determineKeySize(cert.SignatureAlgorithm, cmKeyAlgorithm)
+		
 		if err != nil {
 			klog.Info(err)
 			return nil
@@ -99,7 +100,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
-
+		keySize, err := determineKeySize(key.Public().(*rsa.PublicKey).Size(), cmKeyAlgorithm)
 		keyBytes := secret.Data["tls.crt"]
 		block, _ := pem.Decode(keyBytes)
 		key2, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
