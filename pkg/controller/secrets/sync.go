@@ -102,22 +102,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Info(err)
 			return nil
 		}
-		keyBytes := secret.Data["tls.key"]
-		block, _ := pem.Decode(keyBytes)
-		if block == nil {
-			klog.Info("Nil block")
-			return nil
-		}
 		
-		key2, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-		if err != nil {
-			klog.Info(err)
-			return nil
-		}
-		klog.Infof("The key2: %v", key2)
-		klog.Infof("Public part: %v", key2.PublicKey)
-		klog.Infof("The n: %v", key2.PublicKey.N)
-		klog.Infof("Size func: %d", key2.PublicKey.Size())
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
@@ -184,15 +169,20 @@ func determineKeySize(n int, algo v1alpha1.KeyAlgorithm) (int, error) {
 		switch n {
 		case 512:
 			keySize = 4096
-		case 384:
+		case 384: // Unable to match this right now 
 			keySize = 3072
 		case 256:
 			keySize = 2048
 		default:
 			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %d", n)
 		}
-	case v1alpha1.ECDSAKeyAlgorithm:
-		keySize = n
+	case v1alpha1.ECDSAKeyAlgorithm: // not tested
+		switch n {
+		case 521 || 384 || 256:
+			keySize = n
+		default:
+			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %d", n)
+		}
 	}
 	return keySize, nil
 }
