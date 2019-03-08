@@ -87,7 +87,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		}
 		ips = removeDuplicates(ips)
 		
-		keyAlgorithm, _ := getKeyAlgorithm()
+		keyAlgorithm, _ := getKeyAlgorithm(cert)
 
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
@@ -138,13 +138,13 @@ func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, 
 
 	if err != nil {
 		klog.Infof("Error occurred getting the certificate from the secret: %v", error)
-		return nil, fmt.Sprintf("Error occurred getting the certificate from the secret: %v", error)
+		return nil, fmt.Errorf("Error occurred getting the certificate from the secret: %v", error)
 	}
 
 	if len(certificates) < 1 {
 		errMsg := "Error, couldn't get at least one certificate from secret."
 		klog.Info(errMsg)
-		return nil, fmt.Sprint(errMsg)
+		return nil, fmt.Errorf("%s", errMsg)
 	}
 	 
 	cert := certificates[0]
@@ -152,7 +152,7 @@ func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, 
 }
 
 // Check if there's a validation function for this
-func getKeyAlgorithm() (v1alpha1.KeyAlgorithm, error) {
+func getKeyAlgorithm(cert *x509.Certificate) (v1alpha1.KeyAlgorithm, error) {
 	keyAlgorithm := cert.PublicKeyAlgorithm.String()
 	var cmKeyAlgorithm v1alpha1.KeyAlgorithm
 	if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
@@ -161,11 +161,12 @@ func getKeyAlgorithm() (v1alpha1.KeyAlgorithm, error) {
 		cmKeyAlgorithm = v1alpha1.ECDSAKeyAlgorithm
 	} else {
 		klog.Infof("Invalid key algorithm %s", keyAlgorithm)
-		return nil
+		return nil, fmt.Errorf("Invalid key algorithm %s", keyAlgorithm)
 	}
+	return cmKeyAlgorithm, nil
 }
 
-func updateSecret(secrets corev1.Secrets, crt *v1alpha1.Certificate, secret *corev1.Secret) {
+func updateSecret(secrets corev1.SecretLister, crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	// Update secret metadata
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
