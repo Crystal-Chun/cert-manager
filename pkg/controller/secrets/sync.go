@@ -100,7 +100,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		//key = rsa.PrivateKey(key)
 		key = key.(rsa.PublicKey)
 		//klog.Infof("Private key: %v", key)
-		klog.Infof("Public key: %v", key
+		klog.Infof("Public key: %v", key)
 		klog.Infof("The potential key size: %v", key.N)
 		klog.Infof("The key size from size func: %d", key.Size())
 		/*klog.Infof("Public key: %v", key.Public())
