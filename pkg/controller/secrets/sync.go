@@ -167,7 +167,7 @@ func getKeyAlgorithm(cert *x509.Certificate) (v1alpha1.KeyAlgorithm, error) {
 	return cmKeyAlgorithm, nil
 }
 
-func updateSecret(secrets corev1.Secret, crt *v1alpha1.Certificate, secret *corev1.Secret) {
+func updateSecret(secrets corev1.SecretInterface, crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	// Update secret metadata
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
