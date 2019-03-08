@@ -178,7 +178,7 @@ func determineKeySize(n int, algo v1alpha1.KeyAlgorithm) (int, error) {
 		}
 	case v1alpha1.ECDSAKeyAlgorithm: // not tested
 		switch n {
-		case 521 || 384 || 256:
+		case 521, 384, 256:
 			keySize = n
 		default:
 			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %d", n)
