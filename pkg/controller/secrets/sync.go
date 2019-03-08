@@ -160,7 +160,7 @@ func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorith
 		switch sigAlgo {
 		case x509.SHA512WithRSA:
 			keySize = 4096
-		case x509SHA384WithRSA:
+		case x509.SHA384WithRSA:
 			keySize = 3072
 		case x509.SHA256WithRSA:
 			keySize = 2048
