@@ -103,8 +103,17 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			return nil
 		}
 		keyBytes := secret.Data["tls.crt"]
-		block, _ := pem.Decode(keyBytes)
-		key2, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
+		block, err := pem.Decode(keyBytes)
+		if err != nil {
+			klog.Info(err)
+			return nil
+		}
+		
+		key2, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			klog.Info(err)
+			return nil
+		}
 		klog.Infof("The key2: %v", key2)
 		klog.Infof("Public part: %v", key2.PublicKey)
 		klog.Infof("The n: %v", key2.PublicKey.N)
