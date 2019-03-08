@@ -85,12 +85,14 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			}
 		}
 		ips = removeDuplicates(ips)
+		
+		keyAlgorithm, _ := getKeyAlgorithm()
 
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
 		publicKeySize := key.Public().(*rsa.PublicKey).Size()
-		keySize, err := determineKeySize(publicKeySize, cmKeyAlgorithm)
+		keySize, err := determineKeySize(publicKeySize, keyAlgorithm)
 		if err != nil {
 			klog.Info(err)
 			return nil
@@ -112,7 +114,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 					Kind: "ClusterIssuer",
 					Name: "icp-ca-issuer",
 				},
-				KeyAlgorithm: cmKeyAlgorithm,
+				KeyAlgorithm: keyAlgorithm,
 				KeySize: keySize,
 				Duration: durationObject,
 			},
@@ -149,7 +151,7 @@ func getCertificate(ctx context.Context, secret *corev1.Secret) (x509.Certificat
 }
 
 // Check if there's a validation function for this
-func getKeyAlgorithm(publicKeyAlgo string) (v1alpha1.KeyAlgorithm, error) {
+func getKeyAlgorithm() (v1alpha1.KeyAlgorithm, error) {
 	keyAlgorithm := cert.PublicKeyAlgorithm.String()
 	var cmKeyAlgorithm v1alpha1.KeyAlgorithm
 	if keyAlgorithm == "rsa" || keyAlgorithm == "RSA" {
