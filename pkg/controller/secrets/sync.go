@@ -137,8 +137,8 @@ func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, 
 	klog.Infof("Cert length: %d", len(certificates))
 
 	if err != nil {
-		klog.Infof("Error occurred getting the certificate from the secret: %v", error)
-		return nil, fmt.Errorf("Error occurred getting the certificate from the secret: %v", error)
+		klog.Infof("Error occurred getting the certificate from the secret: %v", err)
+		return nil, fmt.Errorf("Error occurred getting the certificate from the secret: %v", err)
 	}
 
 	if len(certificates) < 1 {
@@ -161,12 +161,13 @@ func getKeyAlgorithm(cert *x509.Certificate) (v1alpha1.KeyAlgorithm, error) {
 		cmKeyAlgorithm = v1alpha1.ECDSAKeyAlgorithm
 	} else {
 		klog.Infof("Invalid key algorithm %s", keyAlgorithm)
-		return nil, fmt.Errorf("Invalid key algorithm %s", keyAlgorithm)
+		// what to return here?
+		return v1alpha1.RSAKeyAlgorithm, fmt.Errorf("Invalid key algorithm %s", keyAlgorithm)
 	}
 	return cmKeyAlgorithm, nil
 }
 
-func updateSecret(secrets corev1.SecretLister, crt *v1alpha1.Certificate, secret *corev1.Secret) {
+func updateSecret(secrets corev1.Secret, crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	// Update secret metadata
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
