@@ -5,7 +5,7 @@ import (
 	"k8s.io/klog"
 	"time"
 	"strings"
-	
+	"crypto/x509"
 	"crypto/rsa"
 	
 	"fmt"
@@ -123,14 +123,14 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
 
-		upateSecret(crt, secret)
+		updateSecret(crt, secret)
 		return nil
 	}
 	return nil
 }
 
 // Gets the certificate from the secret
-func getCertificate(ctx context.Context, secret *corev1.Secret) (x509.Certificate, error) {
+func getCertificate(ctx context.Context, secret *corev1.Secret) (*x509.Certificate, error) {
 	keyName := secret.Labels[certificateKeyName]
 	certificates, err := kube.SecretTLSCertName(c.secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name, keyName)
 	klog.Infof("Cert length: %d", len(certificates))
