@@ -6,6 +6,7 @@ import (
 	"time"
 	"strings"
 	"crypto/x509"
+	"crypto/rsa"
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -95,6 +96,12 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Info(err)
 			return nil
 		}
+		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
+		key = key.(rsa.PrivateKey)
+		klog.Infof("Private key: %v", key)
+		klog.Infof("Public key: %v", key.Public())
+		klog.Infof("The potential key size: %v", key.Public().N)
+		klog.Infof("The key size from size func: %d", key.Public().Size())
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
