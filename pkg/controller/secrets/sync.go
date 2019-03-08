@@ -85,40 +85,8 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				klog.Info("Dns name: %s", dnsName)
 				dnsNames = append(dnsNames, dnsName)
 			}
-		} else {
-			klog.Info("No DNS Names")
-			// The certificate doesn't have any dns names, so append the common name at least
-			for _, dnsName := range dnsNames {
-				klog.Infof("Adding dnsName: %s", dnsName)
-				cert.DNSNames = append(cert.DNSNames, dnsName)
-			}
-			klog.Info("Cert's DNSNames: ", cert.DNSNames)
-			klog.Infof("Old cert: %v", certificates[0])
-			klog.Infof("New cert: %v", cert)
-			certificates[0] = cert
-			klog.Infof("Updated cert: %v", certificates[0])
-			certPem, err := pki.EncodeX509(certificates[0])
-			if err != nil {
-				klog.Info("error occurred encoding x509 certificate")
-				klog.Info(err)
-			}
-			
-			secret.Data[keyName] = certPem
-			klog.Info(secret.Data[keyName])
-			sec, err := 
-			if err != nil {
-				klog.Info("Error occurred updating secret")
-				klog.Info(err)
-			} else  {
-				klog.Infof("The returned secret %v", sec)
-				newc, error := kube.SecretTLSCertName(c.secretLister, namespace, sec.ObjectMeta.Name, keyName)
-				if error != nil {
-					klog.Info("Error getting tls cert ")
-					klog.Info(error)
-				}
-				klog.Info("New cert dns names: ", newc[0].DNSNames)
-			}
-		}
+		} 
+		
 		dnsNames = removeDuplicates(dnsNames)
 
 		// Create the certificate object.
