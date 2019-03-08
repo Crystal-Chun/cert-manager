@@ -97,16 +97,13 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			return nil
 		}
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
-		//klog.Infof("Looking at the type: %T", key.(type))
-		//key = rsa.PrivateKey(key)
-		//key = x509.ParsePKCS1PrivateKey(key)
-		//klog.Infof("Private key: %v", key)
-		//klog.Infof("Public key: %v", key)
-		//klog.Infof("The potential key size: %v", key.N)
-		//klog.Infof("The key size from size func: %d", key.Size())
-		klog.Infof("Public key: %v", key.Public().(*rsa.PublicKey))
-		klog.Infof("The potential key size: %v", key.Public().(*rsa.PublicKey).N)
+
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
+
+		keyBytes := secret.Data["tls.crt"]
+		block, _ := pem.Decode(keyBytes)
+		key2, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
+		klog.Infof("The key2: %v", key2)
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
@@ -166,31 +163,22 @@ Outer:
 	return found
 }
 
-func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorithm) (int, error) {
+func determineKeySize(n int, algo v1alpha1.KeyAlgorithm) (int, error) {
 	var keySize int
 	switch algo {
 	case v1alpha1.RSAKeyAlgorithm:
-		switch sigAlgo {
-		case x509.SHA512WithRSA:
+		switch n {
+		case 512:
 			keySize = 4096
-		case x509.SHA384WithRSA:
+		case 384:
 			keySize = 3072
-		case x509.SHA256WithRSA:
+		case 256:
 			keySize = 2048
 		default:
 			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
 		}
 	case v1alpha1.ECDSAKeyAlgorithm:
-		switch sigAlgo {
-		case x509.ECDSAWithSHA512:
-			keySize = 512
-		case x509.ECDSAWithSHA384:
-			keySize = 384
-		case x509.ECDSAWithSHA256:
-			keySize = 256
-		default:
-			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
-		}
+		keySize = n
 	}
 	return keySize, nil
 }
