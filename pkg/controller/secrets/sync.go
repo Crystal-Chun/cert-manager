@@ -102,7 +102,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Info(err)
 			return nil
 		}
-		keyBytes := secret.Data["tls.crt"]
+		keyBytes := secret.Data["tls.key"]
 		block, _ := pem.Decode(keyBytes)
 		if block == nil {
 			klog.Info("Nil block")
