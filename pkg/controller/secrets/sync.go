@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/rsa"
 	"fmt"
+	"encoding/pem"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
