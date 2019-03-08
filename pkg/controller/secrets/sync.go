@@ -95,7 +95,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Old cert: %v", certificates[0])
 			klog.Infof("New cert: %v", cert)
 			certificates[0] = cert
-			klog.Infof("Updated cert: %v")
+			klog.Infof("Updated cert: %v", certificates[0])
 			certPem, err := pki.EncodeX509(certificates[0])
 			if err != nil {
 				klog.Info("error occurred encoding x509 certificate")
@@ -118,6 +118,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				klog.Info("New cert dns names: ", newc[0].DNSNames)
 			}
 		}
+		dnsNames = pki.removeDuplicates(dnsNames)
 
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
