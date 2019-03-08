@@ -165,7 +165,7 @@ func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorith
 		case x509.SHA256WithRSA:
 			keySize = 2048
 		default:
-			return nil, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
+			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
 		}
 	case v1alpha1.ECDSAKeyAlgorithm:
 		switch sigAlgo {
@@ -176,7 +176,7 @@ func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorith
 		case x509.ECDSAWithSHA256:
 			keySize = 256
 		default:
-			return nil, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
+			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
 		}
 	}
 	return keySize, nil
