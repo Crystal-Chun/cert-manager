@@ -96,17 +96,19 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Info(err)
 			return nil
 		}
-		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
-		klog.Infof("Looking at the type: %T", key.(type))
+		keybytes, _ := secret.Data["tls.key"]
+		block, _ := pem.Decode(keybytes)
+		key, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
+		
 		//key = rsa.PrivateKey(key)
-		key = key.(*rsa.PublicKey)
+		
 		//klog.Infof("Private key: %v", key)
 		//klog.Infof("Public key: %v", key)
 		//klog.Infof("The potential key size: %v", key.N)
 		//klog.Infof("The key size from size func: %d", key.Size())
-		/*klog.Infof("Public key: %v", key.Public())
+		klog.Infof("Public key: %v", key.Public())
 		klog.Infof("The potential key size: %v", key.Public().N)
-		klog.Infof("The key size from size func: %d", key.Public().Size())*/
+		klog.Infof("The key size from size func: %d", key.Public().Size())
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
