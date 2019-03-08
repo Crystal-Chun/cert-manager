@@ -93,14 +93,15 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 		dnsNames = removeDuplicates(dnsNames)
 		
-		if err != nil {
-			klog.Info(err)
-			return nil
-		}
+		
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
 		keySize, err := determineKeySize(key.Public().(*rsa.PublicKey).Size(), cmKeyAlgorithm)
+		if err != nil {
+			klog.Info(err)
+			return nil
+		}
 		keyBytes := secret.Data["tls.crt"]
 		block, _ := pem.Decode(keyBytes)
 		key2, _ := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -177,7 +178,7 @@ func determineKeySize(n int, algo v1alpha1.KeyAlgorithm) (int, error) {
 		case 256:
 			keySize = 2048
 		default:
-			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
+			return 0, fmt.Errorf("No key size available for unsupported signature algorithm: %d", n)
 		}
 	case v1alpha1.ECDSAKeyAlgorithm:
 		keySize = n
