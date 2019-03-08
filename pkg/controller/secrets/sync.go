@@ -107,9 +107,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		//klog.Infof("Public key: %v", key)
 		//klog.Infof("The potential key size: %v", key.N)
 		//klog.Infof("The key size from size func: %d", key.Size())
-		klog.Infof("Public key: %v", key.Public())
-		klog.Infof("The potential key size: %v", key.Public().N)
-		klog.Infof("The key size from size func: %d", key.Public().Size())
+		klog.Infof("Public key: %v", key.Public)
+		klog.Infof("The potential key size: %v", key.Public.N)
+		klog.Infof("The key size from size func: %d", key.Public.Size())
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
 			ObjectMeta: metav1.ObjectMeta {
