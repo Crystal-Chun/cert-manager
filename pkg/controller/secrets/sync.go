@@ -97,7 +97,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			return nil
 		}
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
-		key = key.(rsa.PrivateKey)
+		key = rsa.PrivateKey(key)
 		klog.Infof("Private key: %v", key)
 		klog.Infof("Public key: %v", key.Public())
 		klog.Infof("The potential key size: %v", key.Public().N)
