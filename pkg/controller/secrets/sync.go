@@ -105,7 +105,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			
 			secret.Data[keyName] = certPem
 			klog.Info(secret.Data[keyName])
-			sec, err := c.Client.CoreV1().Secrets(namespace).Update(secret)
+			sec, err := 
 			if err != nil {
 				klog.Info("Error occurred updating secret")
 				klog.Info(err)
@@ -159,6 +159,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			secret.Labels = make(map[string]string)
 		}
 		secret.Labels[v1alpha1.CertificateNameKey] = crt.Name
+		c.Client.CoreV1().Secrets(namespace).Update(secret)
 		return nil
 	}
 	return nil
