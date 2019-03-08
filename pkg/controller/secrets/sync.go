@@ -11,6 +11,7 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
+	corelisters "k8s.io/client-go/listers/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/util/kube"
 	"github.com/jetstack/cert-manager/pkg/util/pki"
@@ -34,7 +35,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 	if existingCertificate == nil && createLabel == "installer" {
 		klog.V(4).Info("Creating cert-manager Certificate for installer-based certificate")
 		
-		cert, err := getCertificate(ctx, secret)
+		cert, err := getCertificate(c.secretLister, ctx, secret)
 		if err != nil {
 			klog.Infof("Error occurred: %s", err)
 			return nil
@@ -77,7 +78,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		
 		// Check for ipaddresses here
 		ips := make([]string, 0)
-		if len(cert.IPAddresses > 0) {
+		if len(cert.IPAddresses) > 0 {
 			klog.Infof("Length of IP addresses: %d", len(cert.IPAddresses))
 			for _, ipAddress := range cert.IPAddresses {
 				klog.Info("IP: %s", ipAddress.String())
@@ -123,16 +124,16 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
 
-		updateSecret(crt, secret)
+		updateSecret(c.Client.CoreV1().Secrets(namespace), crt, secret)
 		return nil
 	}
 	return nil
 }
 
 // Gets the certificate from the secret
-func getCertificate(ctx context.Context, secret *corev1.Secret) (*x509.Certificate, error) {
+func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, secret *corev1.Secret) (*x509.Certificate, error) {
 	keyName := secret.Labels[certificateKeyName]
-	certificates, err := kube.SecretTLSCertName(c.secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name, keyName)
+	certificates, err := kube.SecretTLSCertName(secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name, keyName)
 	klog.Infof("Cert length: %d", len(certificates))
 
 	if err != nil {
@@ -164,7 +165,7 @@ func getKeyAlgorithm() (v1alpha1.KeyAlgorithm, error) {
 	}
 }
 
-func updateSecret(crt *v1alpha1.Certificate, secret *corev1.Secret) {
+func updateSecret(secrets corev1.Secrets, crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	// Update secret metadata
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
@@ -173,14 +174,14 @@ func updateSecret(crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = crt.Spec.IssuerRef.Kind
 	secret.Annotations[v1alpha1.CommonNameAnnotationKey] = crt.Spec.CommonName
 	secret.Annotations[v1alpha1.AltNamesAnnotationKey] = strings.Join(crt.Spec.DNSNames, ",")
-	secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(pki.IPAddressesToString(crt.Spec.IPAddresses), ",")
+	secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(crt.Spec.IPAddresses, ",")
 
 	// Always set the certificate name label on the target secret
 	if secret.Labels == nil {
 		secret.Labels = make(map[string]string)
 	}
 	secret.Labels[v1alpha1.CertificateNameKey] = crt.Name
-	c.Client.CoreV1().Secrets(namespace).Update(secret)
+	secrets.Update(secret)
 }
 
 func removeDuplicates(in []string) []string {
