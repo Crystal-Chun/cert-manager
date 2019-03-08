@@ -118,7 +118,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				klog.Info("New cert dns names: ", newc[0].DNSNames)
 			}
 		}
-		dnsNames = pki.removeDuplicates(dnsNames)
+		dnsNames = removeDuplicates(dnsNames)
 
 		// Create the certificate object.
 		crt := &v1alpha1.Certificate {
@@ -146,4 +146,18 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		return nil
 	}
 	return nil
+}
+
+func removeDuplicates(in []string) []string {
+	var found []string
+Outer:
+	for _, i := range in {
+		for _, i2 := range found {
+			if i2 == i {
+				continue Outer
+			}
+		}
+		found = append(found, i)
+	}
+	return found
 }
