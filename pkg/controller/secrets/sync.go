@@ -4,6 +4,7 @@ import (
 	"context"
 	"k8s.io/klog"
 	"time"
+	"strings"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
@@ -148,7 +149,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			secret.Annotations = make(map[string]string)
 		}
 		secret.Annotations[v1alpha1.IssuerNameAnnotationKey] = crt.Spec.IssuerRef.Name
-		secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = issuerKind(crt)
+		secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = crt.Spec.IssuerRef.Kind
 		secret.Annotations[v1alpha1.CommonNameAnnotationKey] = cert.Subject.CommonName
 		secret.Annotations[v1alpha1.AltNamesAnnotationKey] = strings.Join(cert.DNSNames, ",")
 		secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(pki.IPAddressesToString(cert.IPAddresses), ",")
