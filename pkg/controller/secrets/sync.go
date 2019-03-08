@@ -90,7 +90,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		} 
 
 		dnsNames = removeDuplicates(dnsNames)
-		keySize, err := determineKeySize(cert.SignatureAlgorithm.String(), cmKeyAlgorithm)
+		keySize, err := determineKeySize(cert.SignatureAlgorithm, cmKeyAlgorithm)
 		if err != nil {
 			klog.Info(err)
 			return nil
