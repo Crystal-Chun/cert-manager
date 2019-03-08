@@ -15,7 +15,6 @@ import (
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/util/kube"
-	"github.com/jetstack/cert-manager/pkg/util/pki"
 	
 )
 
