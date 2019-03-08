@@ -143,6 +143,21 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		c.CMClient.CertmanagerV1alpha1().Certificates(namespace).Create(crt)
 		klog.Infof("Created the certificate object: %v", crt)
 
+		// Update secret metadata
+		if secret.Annotations == nil {
+			secret.Annotations = make(map[string]string)
+		}
+		secret.Annotations[v1alpha1.IssuerNameAnnotationKey] = crt.Spec.IssuerRef.Name
+		secret.Annotations[v1alpha1.IssuerKindAnnotationKey] = issuerKind(crt)
+		secret.Annotations[v1alpha1.CommonNameAnnotationKey] = cert.Subject.CommonName
+		secret.Annotations[v1alpha1.AltNamesAnnotationKey] = strings.Join(cert.DNSNames, ",")
+		secret.Annotations[v1alpha1.IPSANAnnotationKey] = strings.Join(pki.IPAddressesToString(cert.IPAddresses), ",")
+
+		// Always set the certificate name label on the target secret
+		if secret.Labels == nil {
+			secret.Labels = make(map[string]string)
+		}
+		secret.Labels[v1alpha1.CertificateNameKey] = crt.Name
 		return nil
 	}
 	return nil
