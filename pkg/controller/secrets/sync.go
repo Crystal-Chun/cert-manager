@@ -32,7 +32,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 	// If a cert manager Certificate doesn't exist and the label exists, create a cert-manager Certificate from this secret
 	if existingCertificate == nil && createLabel == "installer" {
-		klog.V(4)Info("Creating cert-manager Certificate for installer-based certificate")
+		klog.V(4).Info("Creating cert-manager Certificate for installer-based certificate")
 		
 		cert, err := getCertificate(ctx, secret)
 		if err != nil {
@@ -78,14 +78,14 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		// Check for ipaddresses here
 		ips := make([]string, 0)
 		if len(cert.IPAddresses > 0) {
-			klog.Info("Length of IP addresses: " len(cert.IPAddresses))
+			klog.Infof("Length of IP addresses: %d", len(cert.IPAddresses))
 			for _, ipAddress := range cert.IPAddresses {
 				klog.Info("IP: %s", ipAddress.String())
 				ips = append(ips, ipAddress.String())
 			}
 		}
 		ips = removeDuplicates(ips)
-		
+
 		key, _ := kube.SecretTLSKeyRef(c.secretLister, namespace, secretName, "tls.key")
 
 		klog.Infof("The key size from size func: %d", key.Public().(*rsa.PublicKey).Size())
