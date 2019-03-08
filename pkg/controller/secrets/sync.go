@@ -11,6 +11,7 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	"github.com/jetstack/cert-manager/pkg/util/kube"
@@ -167,7 +168,7 @@ func getKeyAlgorithm(cert *x509.Certificate) (v1alpha1.KeyAlgorithm, error) {
 	return cmKeyAlgorithm, nil
 }
 
-func updateSecret(secrets corelisters.SecretInterface, crt *v1alpha1.Certificate, secret *corev1.Secret) {
+func updateSecret(secrets v1.SecretInterface, crt *v1alpha1.Certificate, secret *corev1.Secret) {
 	// Update secret metadata
 	if secret.Annotations == nil {
 		secret.Annotations = make(map[string]string)
