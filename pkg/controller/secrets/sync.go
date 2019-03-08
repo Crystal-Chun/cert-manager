@@ -6,6 +6,7 @@ import (
 	"time"
 	"strings"
 	"crypto/x509"
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	"github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
@@ -156,7 +157,7 @@ func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorith
 	var keySize int
 	switch algo {
 	case v1alpha1.RSAKeyAlgorithm:
-		switch sigAlgo.String() {
+		switch sigAlgo {
 		case x509.SHA512WithRSA:
 			keySize = 4096
 		case x509SHA384WithRSA:
@@ -167,7 +168,7 @@ func determineKeySize(sigAlgo x509.SignatureAlgorithm, algo v1alpha1.KeyAlgorith
 			return nil, fmt.Errorf("No key size available for unsupported signature algorithm: %s", sigAlgo.String())
 		}
 	case v1alpha1.ECDSAKeyAlgorithm:
-		switch sigAlgo.String() {
+		switch sigAlgo {
 		case x509.ECDSAWithSHA512:
 			keySize = 512
 		case x509.ECDSAWithSHA384:
