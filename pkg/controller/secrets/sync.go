@@ -111,6 +111,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 					Name: "icp-ca-issuer",
 				},
 				KeyAlgorithm: cmKeyAlgorithm,
+				KeySize: keySize,
 				Duration: durationObject,
 			},
 		}
