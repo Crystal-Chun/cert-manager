@@ -71,7 +71,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			Duration: duration,
 		}
 		renewBeforeObject := &metav1.Duration {
-			Duration: renewBefore
+			Duration: renewBefore,
 		}
 		// Check duration less than one hour and duration less than renewBefore - check if validation func already exists
 
