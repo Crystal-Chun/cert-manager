@@ -64,7 +64,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 			klog.Infof("Duration: %s\nDefault RenewBefore: %s", duration, v1alpha1.DefaultRenewBefore)
 			klog.Infof("Minimum renewbefore: %s", v1alpha1.MinimumRenewBefore)
 			// If it is, then update renewbefore time to half of the duration time
-			renewBefore = (duration.Seconds()/2) * time.Second
+			renewBefore = time.Duration(duration.Seconds()/2) * time.Second
 		}
 
 		durationObject := &metav1.Duration {
