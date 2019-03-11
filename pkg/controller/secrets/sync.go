@@ -70,7 +70,9 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 		durationObject := &metav1.Duration {
 			Duration: duration,
 		}
-		
+		renewBeforeObject := &metav1.Duration {
+			Duration: renewBefore
+		}
 		// Check duration less than one hour and duration less than renewBefore - check if validation func already exists
 
 		// Can we consolidate ip and dns into the same function
@@ -134,7 +136,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				KeyAlgorithm: keyAlgorithm,
 				KeySize: keySize,
 				Duration: durationObject,
-				RenewBefore: renewBefore,
+				RenewBefore: renewBeforeObject,
 			},
 		}
 		
