@@ -131,21 +131,19 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 // Gets the certificate from the secret
 func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, secret *corev1.Secret) (*x509.Certificate, error) {
-	certificates, err := kube.SecretTLSCert(secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name)
-	klog.Infof("Cert length: %d", len(certificates))
+	cert, err := kube.SecretTLSCert(secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name)
 
 	if err != nil {
 		klog.Infof("Error occurred getting the certificate from the secret: %v", err)
 		return nil, fmt.Errorf("Error occurred getting the certificate from the secret: %v", err)
 	}
 
-	if len(certificates) < 1 {
+	/*if len(certificates) < 1 {
 		errMsg := "Error, couldn't get at least one certificate from secret."
 		klog.Info(errMsg)
 		return nil, fmt.Errorf("%s", errMsg)
-	}
+	}*/
 	 
-	cert := certificates[0]
 	return cert, nil
 }
 
