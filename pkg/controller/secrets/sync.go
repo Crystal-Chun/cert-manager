@@ -52,11 +52,24 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 		duration := cert.NotAfter.Sub(time.Now())
 		
+		klog.Info("Duration: %s", duration)
+		klog.Info("Not After: %s", cert.NotAfter)
+		klog.Info("Time now: %s", time.Now())
+		// Check if duration is less than renewbefore time
+		if duration < v1alpha1.DefaultRenewBefore {
+			klog.Info("Duration is less than default renewbefore")
+			klog.Infof("Duration: %s\nDefault RenewBefore: %s", duration, v1alpha1.DefaultRenewBefore)
+			klog.Info("Minimum renewbefore: %s", v1alpha1.MinimumRenewBefore)
+			// If it is, then update renewbefore time
+		
+		}
 		durationObject := &metav1.Duration {
 			Duration: duration,
 		}
+		
 		// Check duration less than one hour and duration less than renewBefore - check if validation func already exists
 
+		// Can we consolidate ip and dns into the same function
 
 		// I'm confused, are all SANS also DNSNames?
 		dnsNames := make([]string, 0)
