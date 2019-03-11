@@ -52,17 +52,21 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 		duration := cert.NotAfter.Sub(time.Now())
 		
-		klog.Info("Duration: %s", duration)
-		klog.Info("Not After: %s", cert.NotAfter)
-		klog.Info("Time now: %s", time.Now())
-		// Check if duration is less than renewbefore time
-		if duration < v1alpha1.DefaultRenewBefore {
-			klog.Info("Duration is less than default renewbefore")
+		klog.Infof("Duration: %s", duration)
+		klog.Infof("Not After: %s", cert.NotAfter)
+		klog.Infof("Time now: %s", time.Now())
+		renewBefore := v1alpha1.DefaultRenewBefore
+		if duration < v1alpha1.MinimumCertificateDuration {
+			klog.Infof("Invalid duration, must be greater than %s", v1alpha1.MinimumCertificateDuration)
+			return nil
+		} else if duration < renewBefore {
+			klog.Infof("Duration is less than default renewbefore")
 			klog.Infof("Duration: %s\nDefault RenewBefore: %s", duration, v1alpha1.DefaultRenewBefore)
-			klog.Info("Minimum renewbefore: %s", v1alpha1.MinimumRenewBefore)
-			// If it is, then update renewbefore time
-		
+			klog.Infof("Minimum renewbefore: %s", v1alpha1.MinimumRenewBefore)
+			// If it is, then update renewbefore time to half of the duration time
+			renewBefore = (duration.Seconds()/2) * time.Second
 		}
+
 		durationObject := &metav1.Duration {
 			Duration: duration,
 		}
@@ -130,6 +134,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 				KeyAlgorithm: keyAlgorithm,
 				KeySize: keySize,
 				Duration: durationObject,
+				RenewBefore: renewBefore,
 			},
 		}
 		
