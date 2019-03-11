@@ -73,24 +73,6 @@ func SecretTLSCertChain(secretLister corelisters.SecretLister, namespace, name s
 	return cert, nil
 }
 
-func SecretTLSCertName(secretLister corelisters.SecretLister, namespace, name string, key string) ([]*x509.Certificate, error){
-	secret, err := secretLister.Secrets(namespace).Get(name)
-	if err != nil {
-		return nil, err
-	}
-
-	certBytes, ok := secret.Data[key]
-	if !ok {
-		return nil, errors.NewInvalidData("no data for %q in secret '%s/%s'", api.TLSCertKey, namespace, name)
-	}
-	cert, err := pki.DecodeX509CertificateChainBytes(certBytes)
-	if err != nil {
-		return cert, errors.NewInvalidData(err.Error())
-	}
-
-	return cert, nil
-}
-
 func SecretTLSKeyPair(secretLister corelisters.SecretLister, namespace, name string) ([]*x509.Certificate, crypto.Signer, error) {
 	secret, err := secretLister.Secrets(namespace).Get(name)
 	if err != nil {

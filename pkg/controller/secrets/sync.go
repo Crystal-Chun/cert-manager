@@ -21,7 +21,6 @@ import (
 const (
 	createCertificate	 	= 	"create-certificate"
 	certificateName			= 	"certificate-name"
-	certificateKeyName 		= 	"certificate-key"
 )
 
 func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
@@ -132,8 +131,7 @@ func (c *Controller) Sync(ctx context.Context, secret *corev1.Secret) error {
 
 // Gets the certificate from the secret
 func getCertificate(secretLister corelisters.SecretLister, ctx context.Context, secret *corev1.Secret) (*x509.Certificate, error) {
-	keyName := secret.Labels[certificateKeyName]
-	certificates, err := kube.SecretTLSCertName(secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name, keyName)
+	certificates, err := kube.SecretTLSCert(secretLister, secret.ObjectMeta.Namespace, secret.ObjectMeta.Name)
 	klog.Infof("Cert length: %d", len(certificates))
 
 	if err != nil {
