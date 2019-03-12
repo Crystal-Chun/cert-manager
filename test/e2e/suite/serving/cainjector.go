@@ -18,7 +18,6 @@ package certificate
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -103,7 +102,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 
 			By("grabbing the corresponding secret")
 			var secret corev1.Secret
-			Eventually(func() error { return f.CRClient.Get(context.Background(), secretName, &secret) }, 2*time.Second).Should(Succeed())
+			Eventually(func() error { return f.CRClient.Get(context.Background(), secretName, &secret) }, "10s", "2s").Should(Succeed())
 
 			By("checking that all webhooks have a populated CA")
 			caData := secret.Data["ca.crt"]
@@ -113,7 +112,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					return nil, err
 				}
 				return [][]byte{newHook.Webhooks[0].ClientConfig.CABundle, newHook.Webhooks[1].ClientConfig.CABundle}, nil
-			}, 2*time.Second).Should(Equal([][]byte{caData, caData}))
+			}, "10s", "2s").Should(Equal([][]byte{caData, caData}))
 
 			return hook, *cert, secret
 		}
@@ -175,7 +174,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 
 			By("grabbing the new secret")
 			var secret corev1.Secret
-			Eventually(func() error { return f.CRClient.Get(context.Background(), secretName, &secret) }).Should(Succeed())
+			Eventually(func() error { return f.CRClient.Get(context.Background(), secretName, &secret) }, "10s", "2s").Should(Succeed())
 
 			By("verifying that the hooks have the new data")
 			caData := secret.Data["ca.crt"]
@@ -185,7 +184,7 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 					return nil, err
 				}
 				return [][]byte{newHook.Webhooks[0].ClientConfig.CABundle, newHook.Webhooks[1].ClientConfig.CABundle}, nil
-			}, "2s").Should(Equal([][]byte{caData, caData}))
+			}, "10s", "2s").Should(Equal([][]byte{caData, caData}))
 		})
 
 		It("should ignore webhooks with invalid annotations", func() {
@@ -230,6 +229,51 @@ var _ = framework.CertManagerDescribe("CA Injector", func() {
 				return [][]byte{newHook.Webhooks[0].ClientConfig.CABundle, newHook.Webhooks[1].ClientConfig.CABundle}, nil
 			}).Should(Equal([][]byte{hook.Webhooks[0].ClientConfig.CABundle, hook.Webhooks[1].ClientConfig.CABundle}))
 
+		})
+
+		It("should inject the apiserver CA if the webhook as the inject-apiserver-ca annotation", func() {
+			if len(f.KubeClientConfig.CAData) == 0 {
+				Skip("skipping test as the kube client CA bundle is not set")
+			}
+			By("creating a vaidating webhook with the inject-apiserver-ca annotation")
+			someURL := "https://localhost:8675"
+			hook := admissionreg.ValidatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "apiserver-ca-hook",
+					Annotations: map[string]string{
+						injctrl.WantInjectAPIServerCAAnnotation: "true",
+					},
+				},
+				Webhooks: []admissionreg.Webhook{
+					{
+						Name: "hook1.fake.k8s.io",
+						ClientConfig: admissionreg.WebhookClientConfig{
+							URL: &someURL,
+						},
+					},
+					{
+						Name: "hook2.fake.k8s.io",
+						ClientConfig: admissionreg.WebhookClientConfig{
+							Service: &admissionreg.ServiceReference{
+								Name:      "some-svc",
+								Namespace: f.Namespace.Name,
+							},
+						},
+					},
+				},
+			}
+			Expect(f.CRClient.Create(context.Background(), &hook)).To(Succeed())
+			hookToCleanUp = &hook
+
+			By("checking that all webhooks have a populated CA")
+			caData := f.KubeClientConfig.CAData
+			Eventually(func() ([][]byte, error) {
+				var newHook admissionreg.ValidatingWebhookConfiguration
+				if err := f.CRClient.Get(context.Background(), types.NamespacedName{Name: hook.Name}, &newHook); err != nil {
+					return nil, err
+				}
+				return [][]byte{newHook.Webhooks[0].ClientConfig.CABundle, newHook.Webhooks[1].ClientConfig.CABundle}, nil
+			}, "10s", "2s").Should(Equal([][]byte{caData, caData}))
 		})
 	})
 })

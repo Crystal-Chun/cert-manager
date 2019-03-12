@@ -491,6 +491,74 @@ spec:
               - server
               - path
               type: object
+            venafi:
+              properties:
+                cloud:
+                  description: Cloud specifies the Venafi cloud configuration settings.
+                    Only one of TPP or Cloud may be specified.
+                  properties:
+                    apiTokenSecretRef:
+                      description: APITokenSecretRef is a secret key selector for
+                        the Venafi Cloud API token.
+                      properties:
+                        key:
+                          description: The key of the secret to select from. Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    url:
+                      description: URL is the base URL for Venafi Cloud
+                      type: string
+                  required:
+                  - url
+                  - apiTokenSecretRef
+                  type: object
+                tpp:
+                  description: TPP specifies Trust Protection Platform configuration
+                    settings. Only one of TPP or Cloud may be specified.
+                  properties:
+                    caBundle:
+                      description: CABundle is a PEM encoded TLS certifiate to use
+                        to verify connections to the TPP instance. If specified, system
+                        roots will not be used and the issuing CA for the TPP instance
+                        must be verifiable using the provided root. If not specified,
+                        the connection will be verified using the cert-manager system
+                        root certificates.
+                      format: byte
+                      type: string
+                    credentialsRef:
+                      description: CredentialsRef is a reference to a Secret containing
+                        the username and password for the TPP server. The secret must
+                        contain two keys, 'username' and 'password'.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    url:
+                      description: URL is the base URL for the Venafi TPP instance
+                      type: string
+                  required:
+                  - url
+                  - credentialsRef
+                  type: object
+                zone:
+                  description: Zone is the Venafi Policy Zone to use for this issuer.
+                    All requests made to the Venafi platform will be restricted by
+                    the named zone policy. This field is required.
+                  type: string
+              required:
+              - zone
+              type: object
           type: object
         status:
           properties:
@@ -681,6 +749,74 @@ spec:
               - auth
               - server
               - path
+              type: object
+            venafi:
+              properties:
+                cloud:
+                  description: Cloud specifies the Venafi cloud configuration settings.
+                    Only one of TPP or Cloud may be specified.
+                  properties:
+                    apiTokenSecretRef:
+                      description: APITokenSecretRef is a secret key selector for
+                        the Venafi Cloud API token.
+                      properties:
+                        key:
+                          description: The key of the secret to select from. Must
+                            be a valid secret key.
+                          type: string
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    url:
+                      description: URL is the base URL for Venafi Cloud
+                      type: string
+                  required:
+                  - url
+                  - apiTokenSecretRef
+                  type: object
+                tpp:
+                  description: TPP specifies Trust Protection Platform configuration
+                    settings. Only one of TPP or Cloud may be specified.
+                  properties:
+                    caBundle:
+                      description: CABundle is a PEM encoded TLS certifiate to use
+                        to verify connections to the TPP instance. If specified, system
+                        roots will not be used and the issuing CA for the TPP instance
+                        must be verifiable using the provided root. If not specified,
+                        the connection will be verified using the cert-manager system
+                        root certificates.
+                      format: byte
+                      type: string
+                    credentialsRef:
+                      description: CredentialsRef is a reference to a Secret containing
+                        the username and password for the TPP server. The secret must
+                        contain two keys, 'username' and 'password'.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    url:
+                      description: URL is the base URL for the Venafi TPP instance
+                      type: string
+                  required:
+                  - url
+                  - credentialsRef
+                  type: object
+                zone:
+                  description: Zone is the Venafi Policy Zone to use for this issuer.
+                    All requests made to the Venafi platform will be restricted by
+                    the named zone policy. This field is required.
+                  type: string
+              required:
+              - zone
               type: object
           type: object
         status:
@@ -967,17 +1103,18 @@ metadata:
 
 ---
 ---
-# Source: cert-manager/templates/serviceaccount-injector.yaml
+# Source: cert-manager/charts/cainjector/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cert-manager-injector
+  name: cert-manager-cainjector
   namespace: "cert-manager"
   labels:
-    app: cert-manager-injector
-    chart: cert-manager-v0.7.0-alpha.2
+    app: cainjector
+    chart: cainjector-v0.7.0
     release: cert-manager
     heritage: Tiller
+
 ---
 # Source: cert-manager/templates/serviceaccount.yaml
 apiVersion: v1
@@ -987,26 +1124,29 @@ metadata:
   namespace: "cert-manager"
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
 ---
-# Source: cert-manager/templates/rbac-injector.yaml
+# Source: cert-manager/charts/cainjector/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: cert-manager-injector
+  name: cert-manager-cainjector
   labels:
-    app: cert-manager-injector
-    chart: cert-manager-v0.7.0-alpha.2
+    app: cainjector
+    chart: cainjector-v0.7.0
     release: cert-manager
     heritage: Tiller
 rules:
   - apiGroups: ["certmanager.k8s.io"]
     resources: ["certificates"]
-    verbs: ["*"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
-    resources: ["secrets", "configmaps", "events"]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "events"]
     verbs: ["*"]
   - apiGroups: ["admissionregistration.k8s.io"]
     resources: ["validatingwebhookconfigurations", "mutatingwebhookconfigurations"]
@@ -1018,18 +1158,18 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: cert-manager-injector
+  name: cert-manager-cainjector
   labels:
-    app: cert-manager-injector
-    chart: cert-manager-v0.7.0-alpha.2
+    app: cainjector
+    chart: cainjector-v0.7.0
     release: cert-manager
     heritage: Tiller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cert-manager-injector
+  name: cert-manager-cainjector
 subjects:
-  - name: cert-manager-injector
+  - name: cert-manager-cainjector
     namespace: "cert-manager"
     kind: ServiceAccount
 ---
@@ -1040,7 +1180,7 @@ metadata:
   name: cert-manager
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
 rules:
@@ -1060,7 +1200,7 @@ metadata:
   name: cert-manager
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
 roleRef:
@@ -1078,7 +1218,7 @@ metadata:
   name: cert-manager-view
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
     rbac.authorization.k8s.io/aggregate-to-view: "true"
@@ -1095,7 +1235,7 @@ metadata:
   name: cert-manager-edit
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
     rbac.authorization.k8s.io/aggregate-to-edit: "true"
@@ -1105,51 +1245,44 @@ rules:
     resources: ["certificates", "issuers"]
     verbs: ["create", "delete", "deletecollection", "patch", "update"]
 ---
-# Source: cert-manager/templates/deployment-injector.yaml
+# Source: cert-manager/charts/cainjector/templates/deployment.yaml
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: cert-manager-injector
+  name: cert-manager-cainjector
   namespace: "cert-manager"
   labels:
-    app: cert-manager-injector
-    chart: cert-manager-v0.7.0-alpha.2
+    app: cainjector
+    chart: cainjector-v0.7.0
     release: cert-manager
     heritage: Tiller
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cert-manager-injector
+      app: cainjector
       release: cert-manager
   template:
     metadata:
       labels:
-        app: cert-manager-injector
+        app: cainjector
         release: cert-manager
       annotations:
-        prometheus.io/path: "/metrics"
-        prometheus.io/scrape: 'true'
-        prometheus.io/port: '9402'
     spec:
-      serviceAccountName: cert-manager-injector
+      serviceAccountName: cert-manager-cainjector
       containers:
-        - name: cert-manager-injector
-          image:  "quay.io/jetstack/cert-manager-injectorcontroller:v0.7.0-alpha.0"
+        - name: cainjector
+          image: "quay.io/jetstack/cert-manager-cainjector:v0.7.0"
           imagePullPolicy: IfNotPresent
           args:
           - --leader-election-namespace=$(POD_NAMESPACE)
-          ports:
-          - containerPort: 9402
           env:
           - name: POD_NAMESPACE
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
           resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
+            {}
             
 
 ---
@@ -1161,7 +1294,7 @@ metadata:
   namespace: "cert-manager"
   labels:
     app: cert-manager
-    chart: cert-manager-v0.7.0-alpha.2
+    chart: cert-manager-v0.7.0
     release: cert-manager
     heritage: Tiller
 spec:
@@ -1183,7 +1316,7 @@ spec:
       serviceAccountName: cert-manager
       containers:
         - name: cert-manager
-          image: "quay.io/jetstack/cert-manager-controller:v0.7.0-alpha.0"
+          image: "quay.io/jetstack/cert-manager-controller:v0.7.0"
           imagePullPolicy: IfNotPresent
           args:
           - --cluster-resource-namespace=$(POD_NAMESPACE)
